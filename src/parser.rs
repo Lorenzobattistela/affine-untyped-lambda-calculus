@@ -1,4 +1,8 @@
-#[derive(Debug)]
+#![allow(dead_code)]
+
+use std::collections::HashMap;
+
+#[derive(Debug, Clone)]
 pub enum Term {
     // function term first should be a variable
     Function(Box<Term>, Box<Term>),
@@ -37,16 +41,25 @@ impl Term {
 pub struct Parser {
     current: usize,
     source: Vec<char>,
+    used_variables: HashMap<char, usize>,
 }
 
 // function: peek @, if it is @, consume @, then parse_variable, then consume . then parse term
 // application: peek (, consume (, parse term, then consume an empty space, parse another term and
 // consume )
 // variable: is_variable, one letter vars.
+// to make it affine, we need to make sure that variables are used at most once (but can -not be
+// used)
+// a possible approach is to mark a variable with a bool used and panic if variable is used more
+// than once
 
 impl Parser {
     pub fn new(source: Vec<char>) -> Self {
-        Parser { source, current: 0 }
+        Parser {
+            source,
+            current: 0,
+            used_variables: HashMap::new(),
+        }
     }
 
     pub fn parse(&mut self) -> Option<Term> {
@@ -85,7 +98,6 @@ impl Parser {
     }
 
     fn parse_variable(&mut self) -> Option<Term> {
-        println!("Parsing variable.");
         let variable_name = self.peek();
         if !self.is_variable(variable_name) {
             panic!(
@@ -93,9 +105,21 @@ impl Parser {
                 variable_name
             );
         }
-        println!("Consuming variable name: {}.", variable_name);
+
+        if self.used_variables.contains_key(&variable_name) {
+            if let Some(x) = self.used_variables.get(&variable_name) {
+                if *x != 1 {
+                    panic!(
+                        "Affine lambda calculus does not allow to use a variable more than once."
+                    );
+                }
+                self.used_variables.insert(variable_name, *x + 1);
+            }
+        } else {
+            self.used_variables.insert(variable_name, 1);
+        }
+
         self.consume(variable_name);
-        //println!("Current on parser is: {}", self.peek());
         Some(Term::Variable(variable_name))
     }
 
