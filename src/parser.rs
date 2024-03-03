@@ -85,14 +85,10 @@ impl Parser {
     }
 
     fn parse_function(&mut self) -> Option<Term> {
-        println!("Parsing function!");
         self.consume('@');
-        println!("Consumed @, parsing variable!");
         let variable: Term = self.parse_variable()?;
         variable.print();
-        println!("Parsed variable!");
         self.consume('.');
-        println!("Now parsing body.");
         let body: Term = self.parse_term()?;
         Some(Term::Function(Box::new(variable), Box::new(body)))
     }
@@ -124,16 +120,10 @@ impl Parser {
     }
 
     fn parse_application(&mut self) -> Option<Term> {
-        println!("Parsing application!");
-        println!("Current is: {}", self.peek());
         self.consume('(');
         let first_term = self.parse_term()?;
         self.consume(' ');
         let second_term = self.parse_term()?;
-        println!(
-            "Parsed second term of application. Going to consume ')'. Position is: {}",
-            self.current
-        );
         self.consume(')');
         Some(Term::Application(
             Box::new(first_term),
